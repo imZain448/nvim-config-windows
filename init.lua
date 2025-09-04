@@ -43,6 +43,7 @@ What is Kickstart?
 
 Kickstart Guide:
 
+
   TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
 
     If you don't know what this means, type the following:
@@ -90,11 +91,31 @@ P.S. You can delete this when you're done too. It's your config now! :)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+-- Set tabs to 4 spaces
+vim.opt.expandtab = true -- Use spaces instead of tabs
+vim.opt.tabstop = 4 -- Number of visual spaces per TAB
+vim.opt.shiftwidth = 4 -- Spaces per indentation
+
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = false
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
+--
+--
+-- NOTE: setting up landing panel header
+
+vim.g.dashboard_defualt_executive = 'telescope'
+vim.g.dashboard_custom_header = {
+  [[░▒▓█▓▒░      ░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░             ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
+  [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░                   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+  [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░                   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░]],
+  [[░▒▓█▓▒░      ░▒▓██████▓▒░    ░▒▓█▓▒░   ░▒▓██████▓▒░             ░▒▓█▓▒▒▓███▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+  [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░         ░▒▓█▓▒░            ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+  [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░         ░▒▓█▓▒░            ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+  [[░▒▓████████▓▒░▒▓████████▓▒░  ░▒▓█▓▒░  ░▒▓███████▓▒░              ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
+}
+
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
 
@@ -194,16 +215,18 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 --  Use CTRL+<hjkl> to switch between windows
 --
 --  See `:help wincmd` for a list of all window commands
-vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+-- vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+-- vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+-- vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+-- vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+-- NOTE: keymap for opening and closing neo tree
+vim.keymap.set('n', '<leader>e', '<Cmd>Neotree toggle<CR>', { desc = 'Open Neo Tree Window' })
 
 -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
--- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
--- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
--- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
--- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
+vim.keymap.set('n', '<C-S-h>', '<C-w>H', { desc = 'Move window to the left' })
+vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
+vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
+vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -435,7 +458,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>sb', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -671,9 +694,9 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
+        clangd = {},
         -- gopls = {},
-        -- pyright = {},
+        pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -776,7 +799,96 @@ require('lazy').setup({
       },
     },
   },
+  { -- do read the installation section in the readme of mini.snippets!
+    'echasnovski/mini.snippets',
+    dependencies = 'rafamadriz/friendly-snippets',
+    event = 'InsertEnter', -- don't depend on other plugins to load...
+    -- :h MiniSnippets-examples:
+    opts = function()
+      local snippets = require 'mini.snippets'
+      return { snippets = { snippets.gen_loader.from_lang() } }
+    end,
+  },
+  -- lazy.nvim
+  --
+  --
+  -- AVANTE AI PLUGIN
+  -- Code companion AI plugin
+  {
+    'olimorris/codecompanion.nvim',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+    },
+    opts = {
+      log_level = 'DEBUG', -- or "TRACE"
+      strategies = {
+        chat = {
+          adapter = 'gemini',
+          model = 'gemini-2.0-flash',
+        },
+        inline = {
+          adpater = 'gemini',
+          model = 'gemini-2.0-flash',
+        },
+        cmd = {
+          adpater = 'gemini',
+          model = 'gemini-2.0-flash',
+        },
+      },
+      adapters = {
+        http = {
+          gemini = function()
+            return require('codecompanion.adapters').extend('gemini', {
+              env = {
+                api_key = 'NVIM_GEMINI_API_KEY',
+              },
+            })
+          end,
+        },
+      },
+    },
+  },
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    ft = { 'markdown', 'codecompanion' },
+  },
 
+  -- Other package managers
+  -- require('codecompanion').setup {
+  -- },
+
+  {
+    'echasnovski/mini.diff',
+    config = function()
+      local diff = require 'mini.diff'
+      diff.setup {
+        -- Disabled by default
+        source = diff.gen_source.none(),
+      }
+    end,
+  },
+  { -- do read the installation section in the readme of nvim-cmp!
+    'hrsh7th/nvim-cmp',
+    main = 'cmp',
+    dependencies = { 'abeldekat/cmp-mini-snippets' }, -- this plugin
+    event = 'InsertEnter',
+    opts = function()
+      local cmp = require 'cmp'
+      return {
+        snippet = {
+          expand = function(args) -- mini.snippets expands snippets from lsp...
+            local insert = MiniSnippets.config.expand.insert or MiniSnippets.default_insert
+            insert { body = args.body } -- Insert at cursor
+            cmp.resubscribe { 'TextChangedI', 'TextChangedP' }
+            require('cmp.config').set_onetime { sources = {} }
+          end,
+        },
+        sources = cmp.config.sources { { name = 'mini_snippets' } },
+        mapping = cmp.mapping.preset.insert(), -- more opts...
+      }
+    end,
+  },
   { -- Autocompletion
     'saghen/blink.cmp',
     event = 'VimEnter',
@@ -886,6 +998,8 @@ require('lazy').setup({
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
+        transparent = true,
+        style = 'moon',
         styles = {
           comments = { italic = false }, -- Disable italics in comments
         },
@@ -900,6 +1014,22 @@ require('lazy').setup({
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  -- Noice.nvim
+  {
+    'folke/noice.nvim',
+    event = 'VeryLazy',
+    opts = {
+      -- add any options here
+    },
+    dependencies = {
+      -- if you lazy-load any plugin below, make sure to add proper `module="..."` entries
+      'MunifTanjim/nui.nvim',
+      -- OPTIONAL:
+      --   `nvim-notify` is only needed, if you want to use the notification view.
+      --   If not available, we use `mini` as the fallback
+      'rcarriga/nvim-notify',
+    },
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -924,7 +1054,7 @@ require('lazy').setup({
       --  and try some other statusline plugin
       local statusline = require 'mini.statusline'
       -- set use_icons to true if you have a Nerd Font
-      statusline.setup { use_icons = vim.g.have_nerd_font }
+      statusline.setup { use_icons = true }
 
       -- You can configure sections in the statusline by overriding their
       -- default behavior. For example, here we set the section for
@@ -944,7 +1074,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -962,6 +1092,12 @@ require('lazy').setup({
     --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+    config = function(_, opts)
+      -- INFO: comment out this line if you are running on linux as this forces to
+      -- use MSVC over gcc.
+      require('nvim-treesitter.install').compilers = { vim.fn.getenv 'CC', 'cl', 'clang', 'gcc' }
+      require('nvim-treesitter.configs').setup(opts)
+    end,
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
@@ -976,9 +1112,14 @@ require('lazy').setup({
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.easymotion',
+  require 'kickstart.plugins.autoclose',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.avante',
+  require 'kickstart.plugins.dashboard',
+  require 'kickstart.plugins.obsidian',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
