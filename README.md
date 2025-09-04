@@ -1,20 +1,11 @@
-# kickstart.nvim
+# Windows Native Nvim Configuration
 
 ## Introduction
-
-A starting point for Neovim that is:
-
-* Small
-* Single-file
-* Completely Documented
-
-**NOT** a Neovim distribution, but instead a starting point for your configuration.
-
+This is working configuration for using neovim natively on windows with all the important plugins and setup
 ## Installation
 
 ### Install Neovim
-
-Kickstart.nvim targets *only* the latest
+This config is forked from TJ's kickstarter.nvim project you can start from there
 ['stable'](https://github.com/neovim/neovim/releases/tag/stable) and latest
 ['nightly'](https://github.com/neovim/neovim/releases/tag/nightly) of Neovim.
 If you are experiencing issues, please make sure you have the latest versions.
@@ -49,7 +40,7 @@ Neovim's configurations are located under the following paths, depending on your
 | :- | :--- |
 | Linux, MacOS | `$XDG_CONFIG_HOME/nvim`, `~/.config/nvim` |
 | Windows (cmd)| `%localappdata%\nvim\` |
-| Windows (powershell)| `$env:LOCALAPPDATA\nvim\` |
+| Windows (Developer powershell )| `$env:LOCALAPPDATA\nvim\` |
 
 #### Recommended Step
 
