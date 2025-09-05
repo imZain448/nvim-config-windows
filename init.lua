@@ -1144,6 +1144,7 @@ require('lazy').setup({
   require 'kickstart.plugins.dashboard',
   require 'kickstart.plugins.obsidian',
   require 'kickstart.plugins.harpoon',
+  require 'kickstart.plugins.lualine',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1200,6 +1201,12 @@ end, { desc = '[Harpoon] select file 3' })
 vim.keymap.set('n', '<leader>h4', function()
   harpoon:list():select(4)
 end, { desc = '[Harpoon] select file 4' })
+vim.keymap.set('n', '<leader>h5', function()
+  harpoon:list():select(5)
+end, { desc = '[Harpoon] select file 5' })
+vim.keymap.set('n', '<leader>h6', function()
+  harpoon:list():select(6)
+end, { desc = '[Harpoon] select file 6' })
 
 vim.keymap.set('n', '<leader>hk', function()
   local buf_name = vim.api.nvim_buf_get_name(0)
@@ -1213,12 +1220,12 @@ vim.keymap.set('n', '<leader>hk', function()
 end, { desc = '[Harpoon] drop current file from quick menu' })
 
 -- Toggle previous & next buffers stored within Harpoon list
-vim.keymap.set('n', '<C-S-P>', function()
+vim.keymap.set('n', '<leader>hP', function()
   harpoon:list():prev()
-end)
-vim.keymap.set('n', '<C-S-N>', function()
+end, { desc = '[Harpoon] move to the previous file in the quick menu' })
+vim.keymap.set('n', '<leader>hN', function()
   harpoon:list():next()
-end)
+end, { desc = '[Harpoon] move to the next file in the quick menu' })
 
 -- NOTE: Aavnate keybindings AI assistant
 
