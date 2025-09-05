@@ -26,7 +26,7 @@ What is Kickstart?
 
   Kickstart.nvim is a starting point for your own configuration.
     The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
+    owhat your configuration is doing, and modify it to suit your needs.
 
     Once you've done that, you can start exploring, configuring and tinkering to
     make Neovim your own! That might mean leaving Kickstart just the way it is for a while
@@ -75,7 +75,7 @@ Kickstart Guide:
 
     Throughout the file. These are for you, the reader, to help you understand what is happening.
     Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
+    for when you are first encountering a few different constructs in your Neovim config.o
 
 If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
 
@@ -427,6 +427,10 @@ require('lazy').setup({
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
+        defaults = {
+          layout_strategy = 'center',
+          path_display = { 'relative' },
+        },
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
@@ -459,6 +463,10 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>sb', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>so', builtin.lsp_document_symbols, { desc = '[ ] Find symbols in the current file' })
+      vim.keymap.set('n', '<leader>sO', builtin.lsp_dynamic_workspace_symbols, { desc = '[ ] Find symbols in the workspace directory' })
+
+      -- NOTE: changing the layout strategy for lsp_symbols
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -484,7 +492,17 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
     end,
   },
-
+  {
+    'scottmckendry/cyberdream.nvim',
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require('cyberdream').setup {
+        transparent = true,
+      }
+      vim.cmd.colorscheme 'cyberdream'
+    end,
+  },
   -- LSP Plugins
   {
     -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
@@ -784,7 +802,7 @@ require('lazy').setup({
           return nil
         else
           return {
-            timeout_ms = 500,
+            timeout_ms = 1500,
             lsp_format = 'fallback',
           }
         end
@@ -792,10 +810,12 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
+        python = { 'black', 'isort' },
+        cpp = { 'clang_format' },
+        c = { 'clang_format' },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -1008,7 +1028,7 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
     end,
   },
 
@@ -1099,6 +1119,9 @@ require('lazy').setup({
       require('nvim-treesitter.configs').setup(opts)
     end,
   },
+  {
+    'nvim-treesitter/nvim-treesitter-context',
+  },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
@@ -1120,6 +1143,7 @@ require('lazy').setup({
   require 'kickstart.plugins.avante',
   require 'kickstart.plugins.dashboard',
   require 'kickstart.plugins.obsidian',
+  require 'kickstart.plugins.harpoon',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1155,3 +1179,77 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+-- NOTE: Harpoon keymaps - blazing fast file hopping
+local harpoon = require 'harpoon'
+vim.keymap.set('n', '<leader>ha', function()
+  harpoon:list():add()
+end)
+vim.keymap.set('n', '<leader>he', function()
+  harpoon.ui:toggle_quick_menu(harpoon:list())
+end, { desc = '[Harpoon] Togge quick menu' })
+
+vim.keymap.set('n', '<leader>h1', function()
+  harpoon:list():select(1)
+end, { desc = '[Harpoon] select file 1' })
+vim.keymap.set('n', '<leader>h2', function()
+  harpoon:list():select(2)
+end, { desc = '[Harpoon] select file 2' })
+vim.keymap.set('n', '<leader>h3', function()
+  harpoon:list():select(3)
+end, { desc = '[Harpoon] select file 3' })
+vim.keymap.set('n', '<leader>h4', function()
+  harpoon:list():select(4)
+end, { desc = '[Harpoon] select file 4' })
+
+vim.keymap.set('n', '<leader>hk', function()
+  local buf_name = vim.api.nvim_buf_get_name(0)
+  local list = harpoon:list()
+  for i, item in ipairs(list.items) do
+    if item.value == buf_name or vim.fn.fnamemodify(item.value, ':p') == buf_name then
+      list:remove_at(i)
+      break
+    end
+  end
+end, { desc = '[Harpoon] drop current file from quick menu' })
+
+-- Toggle previous & next buffers stored within Harpoon list
+vim.keymap.set('n', '<C-S-P>', function()
+  harpoon:list():prev()
+end)
+vim.keymap.set('n', '<C-S-N>', function()
+  harpoon:list():next()
+end)
+
+-- NOTE: Aavnate keybindings AI assistant
+
+vim.keymap.set('n', '<leader>Ac', function()
+  local avante_types = { 'Avante', 'AvanteInput', 'AvanteSelectedFiles' }
+  local to_close = {}
+
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    local ft = vim.api.nvim_get_option_value('filetype', { buf = buf })
+    if vim.tbl_contains(avante_types, ft) then
+      table.insert(to_close, win)
+    end
+  end
+
+  for _, win in ipairs(to_close) do
+    pcall(vim.api.nvim_win_close, win, true)
+  end
+end, { desc = 'Close Avante Sidebar & Chat' })
+vim.keymap.set('n', '<leader>Ao', '<cmd>AvanteChat<CR>', { desc = 'Open Avante Chat' })
+vim.keymap.set('n', '<leader>An', '<cmd>AvanteChatNew<CR>', { desc = 'Open Avante New Chat' })
+
+-- NOTE: Diagnostics keybindings
+vim.keymap.set('n', '<leader>id', function()
+  local line = vim.api.nvim_win_get_cursor(0)[1] - 1
+  vim.diagnostic.reset(nil, 0) -- resets all
+  -- or filter to remove just current line's diagnostics
+  vim.diagnostic.setqflist {
+    severity = { min = vim.diagnostic.severity.ERROR },
+    filter = function(d)
+      return d.lnum ~= line
+    end,
+  }
+end, { desc = 'Hide diagnostics on current line' })
