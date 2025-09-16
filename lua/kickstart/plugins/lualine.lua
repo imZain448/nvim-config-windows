@@ -6,6 +6,7 @@ return {
 -- Author: lokesh-krishna
 -- MIT license, see LICENSE for more details.
 
+
 -- stylua: ignore
     local colors = {
       blue   = '#80a0ff',
@@ -15,6 +16,7 @@ return {
       red    = '#ff5189',
       violet = '#d183e8',
       grey   = '#303030',
+      green = '#42f551',
     }
 
     local bubbles_theme = {
@@ -27,6 +29,8 @@ return {
       insert = { a = { fg = colors.black, bg = colors.blue } },
       visual = { a = { fg = colors.black, bg = colors.cyan } },
       replace = { a = { fg = colors.black, bg = colors.red } },
+      command = { a = { fg = colors.black, bg = colors.red } },
+      terminal = { a = { fg = colors.black, bg = colors.red } },
 
       inactive = {
         a = { fg = colors.white, bg = colors.black },
@@ -47,6 +51,23 @@ return {
         lualine_c = {
           'diff',
           'diagnostics' --[[ add your center components here in place of this comment ]],
+          {
+            function()
+              return vim.bo.modified and '●' or ''
+            end,
+            color = {
+              gui = 'bold',
+              fg = colors.red,
+              -- fg = function()
+              --   if vim.bo.modified then
+              --     return colors.red
+              --   else
+              --     return colors.green
+              --   end
+              -- end,
+            }, -- Change color to red for unsaved changes
+          },
+          -- 'buffers',
         },
         lualine_x = { 'searchcount', 'lsp_status' },
         lualine_y = { 'filetype', 'progress' },
