@@ -1,4 +1,6 @@
 -- See `:help mapleader`
+--
+--
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -19,6 +21,7 @@ vim.opt.foldmethod = 'expr'
 --
 --
 -- NOTE: setting up landing panel header
+--
 
 vim.g.dashboard_defualt_executive = 'telescope'
 vim.g.dashboard_custom_header = {
@@ -407,6 +410,13 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
     end,
   },
+  {
+    'nvim-telescope/telescope-dap.nvim',
+    dependencies = { 'nvim-telescope/telescope.nvim' },
+    config = function()
+      require('telescope').load_extension 'dap'
+    end,
+  },
   -- lazy.nvim
   {
     'chrisgrieser/nvim-origami',
@@ -427,7 +437,7 @@ require('lazy').setup({
       require('cyberdream').setup {
         transparent = true,
       }
-      vim.cmd.colorscheme 'cyberdream'
+      -- vim.cmd.colorscheme 'cyberdream'
     end,
   },
   -- LSP Plugins
@@ -651,7 +661,31 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+        ts_ls = {
+          filetypes = {
+            'javascript',
+            'javascriptreact',
+            'typescript',
+            'typescriptreact',
+            'jsx',
+            'tsx',
+          },
+          settings = {
+            javascript = {
+              inlayHints = { includeInlayParameterNameHints = 'all', includeInlayVariableTypeHints = true },
+            },
+            typescript = {
+              inlayHints = { includeInlayParameterNameHints = 'all', includeInlayVariableTypeHints = true },
+            },
+          },
+        },
 
+        eslint = {
+          filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' },
+          settings = {
+            format = false,
+          },
+        },
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -737,12 +771,16 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        python = { 'black', 'isort' },
+        python = { 'black', 'isort', 'flake8' },
         cpp = { 'clang_format' },
         c = { 'clang_format' },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascriptreact = { 'prettier', 'eslist', stop_after_first = true },
+        json = { 'prettier' },
+        css = { 'prettier' },
+        html = { 'prettier' },
       },
     },
   },
@@ -761,41 +799,7 @@ require('lazy').setup({
   --
   -- AVANTE AI PLUGIN
   -- Code companion AI plugin
-  {
-    'olimorris/codecompanion.nvim',
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-treesitter/nvim-treesitter',
-    },
-    opts = {
-      log_level = 'DEBUG', -- or "TRACE"
-      strategies = {
-        chat = {
-          adapter = 'gemini',
-          model = 'gemini-2.0-flash',
-        },
-        inline = {
-          adpater = 'gemini',
-          model = 'gemini-2.0-flash',
-        },
-        cmd = {
-          adpater = 'gemini',
-          model = 'gemini-2.0-flash',
-        },
-      },
-      adapters = {
-        http = {
-          gemini = function()
-            return require('codecompanion.adapters').extend('gemini', {
-              env = {
-                api_key = 'NVIM_GEMINI_API_KEY',
-              },
-            })
-          end,
-        },
-      },
-    },
-  },
+
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = { 'markdown', 'codecompanion' },
@@ -934,6 +938,14 @@ require('lazy').setup({
       signature = { enabled = true },
     },
   },
+  {
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    priority = 1000,
+    config = function()
+      -- vim.cmd.colorschem 'catpuccin'
+    end,
+  },
 
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
@@ -950,12 +962,17 @@ require('lazy').setup({
         styles = {
           comments = { italic = false }, -- Disable italics in comments
         },
+        lualine_bold = true,
       }
 
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      -- vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'tokyonight-night'
+
+      vim.cmd [[
+          hi! FloatBorder guifg=#7aa2f7 guibg=NONE
+        ]]
     end,
   },
 
@@ -965,14 +982,13 @@ require('lazy').setup({
   {
     'folke/noice.nvim',
     event = 'VeryLazy',
-    opts = {
-      -- add any options here
+    opts = { -- add any options here
     },
     dependencies = {
       -- if you lazy-load any plugin below, make sure to add proper `module="..."` entries
       'MunifTanjim/nui.nvim',
       -- OPTIONAL:
-      --   `nvim-notify` is only needed, if you want to use the notification view.
+      --   `nvim-notify` i needed, if you want to use the notification view.
       --   If not available, we use `mini` as the fallback
       'rcarriga/nvim-notify',
     },
@@ -1021,7 +1037,22 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
+      ensure_installed = {
+        'bash',
+        'powershell',
+        'c',
+        'diff',
+        'html',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'python',
+        'javascript',
+        'typescript',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       folding = {
@@ -1075,6 +1106,7 @@ require('lazy').setup({
   require 'kickstart.plugins.obsidian',
   require 'kickstart.plugins.harpoon',
   require 'kickstart.plugins.lualine',
+  require 'kickstart.plugins.nvimdap',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1182,7 +1214,7 @@ end, { desc = '[Harpoon] drop file at index 5' })
 
 -- NOTE: Aavnate keybindings AI assistant
 vim.keymap.set('n', '<leader>Ac', function()
-  local avante_types = { 'Avante', 'AvanteInput', 'AvanteSelectedFiles' }
+  local avante_types = { 'Avante', 'AvanteInput', 'AvanteSelectedFiles', 'AvanteSelectedCode' }
   local to_close = {}
 
   for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -1196,10 +1228,10 @@ vim.keymap.set('n', '<leader>Ac', function()
   for _, win in ipairs(to_close) do
     pcall(vim.api.nvim_win_close, win, true)
   end
-end, { desc = 'Close Avante Sidebar & Chat' })
+end, { desc = 'Avante: Close Avante Sidebar & Chat' })
 
-vim.keymap.set('n', '<leader>Ao', '<cmd>AvanteChat<CR>', { desc = 'Open Avante Chat' })
-vim.keymap.set('n', '<leader>An', '<cmd>AvanteChatNew<CR>', { desc = 'Open Avante New Chat' })
+vim.keymap.set('n', '<leader>Ao', '<cmd>AvanteChat<CR>', { desc = 'Avante: Open Avante Chat' })
+vim.keymap.set('n', '<leader>An', '<cmd>AvanteChatNew<CR>', { desc = 'Avante: Open Avante New Chat' })
 
 -- NOTE: Diagnostics keybindings
 vim.keymap.set('n', '<leader>id', function()

@@ -28,6 +28,14 @@ return {
       },
     },
   },
+  window = {
+    edit = {
+      border = 'rounded',
+    },
+    ask = {
+      border = 'rounded',
+    },
+  },
   dependencies = {
     'nvim-lua/plenary.nvim',
     'MunifTanjim/nui.nvim',
