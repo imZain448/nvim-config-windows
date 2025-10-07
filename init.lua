@@ -1034,6 +1034,9 @@ require('lazy').setup({
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter-textobjects',
+    },
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
@@ -1058,6 +1061,12 @@ require('lazy').setup({
       folding = {
         enable = true,
       },
+      playground = {
+        enable = true,
+        -- Optional: Configure how the playground is opened
+        updatetime = 25, -- Debounced time for updating the playground
+        persist_do = true, -- Retain fold/scroll position
+      },
       highlight = {
         enable = true,
         -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
@@ -1077,6 +1086,49 @@ require('lazy').setup({
       -- INFO: comment out this line if you are running on linux as this forces to
       -- use MSVC over gcc.
       require('nvim-treesitter.install').compilers = { vim.fn.getenv 'CC', 'cl', 'clang', 'gcc' }
+
+      -- adding custom jumping and selection keymaps to jump between functions and conditional
+      opts = vim.tbl_deep_extend('force', opts, {
+        textobjects = {
+          -- 1. MOVE (Jump between starts)
+          move = {
+            enable = true,
+            set_jumps = true,
+
+            goto_next_start = {
+              [']f'] = { query = '@function.outer', desc = 'Next Function/Method Start' },
+              [']I'] = { query = '@conditional.outer', desc = 'Next Conditional Block' },
+            },
+
+            goto_previous_start = {
+              ['[f'] = { query = '@function.outer', desc = 'Previous Function/Method Start' },
+              ['[I'] = { query = '@conditional.outer', desc = 'Previous Conditional Block' },
+            },
+            goto_next = {
+              [']i'] = { query = '@loop.goto,@statement.goto', desc = 'Next Loop/Conditional Part' },
+            },
+            goto_previous = {
+              ['[i'] = { query = '@loop.goto,@statement.goto', desc = 'Previous Loop/Conditional Part' },
+            },
+          },
+
+          -- 2. SELECT (Text Objects for Inner/Outer)
+          select = {
+            enable = true,
+            lookahead = true,
+            keymaps = {
+              -- Conditional Selection
+              ['ic'] = { query = '@conditional.inner', desc = 'Inner Conditional Body' },
+              ['ac'] = { query = '@conditional.outer', desc = 'Around Conditional Block' },
+
+              -- Example: Function Selection (If you don't already have one)
+              ['if'] = { query = '@function.inner', desc = 'Inner Function Body' },
+              ['af'] = { query = '@function.outer', desc = 'Around Function' },
+            },
+            include_surrounding_whitespace = true,
+          },
+        },
+      })
       require('nvim-treesitter.configs').setup(opts)
     end,
   },
@@ -1233,6 +1285,16 @@ end, { desc = 'Avante: Close Avante Sidebar & Chat' })
 vim.keymap.set('n', '<leader>Ao', '<cmd>AvanteChat<CR>', { desc = 'Avante: Open Avante Chat' })
 vim.keymap.set('n', '<leader>An', '<cmd>AvanteChatNew<CR>', { desc = 'Avante: Open Avante New Chat' })
 
+-- NOTE: keybindings for todo comments
+vim.keymap.set(
+  'n',
+  '<leader>sT', -- Choose your preferred key sequence (e.g., <leader>s then T)
+  '<cmd>TodoTelescope keywords=TODO,FIXME<cr>',
+  { desc = 'Todo/Fixme (Telescope)' }
+)
+
+vim.keymap.set('n', '<leader>st', '<cmd>TodoTelescope<cr>', { desc = 'All Todos (Telescope)' })
+
 -- NOTE: Diagnostics keybindings
 vim.keymap.set('n', '<leader>id', function()
   local line = vim.api.nvim_win_get_cursor(0)[1] - 1
@@ -1248,3 +1310,8 @@ end, { desc = 'Hide diagnostics on current line' })
 
 -- NOTE: Terminal key bindings
 vim.keymap.set('n', '<leader>tn', '<cmd>term powershell.exe<CR>', { desc = '[Terminal] - open a powershell terminal' })
+
+-- NOTE: for jumping with treesitter context (better then inbuilt <leader>]])
+vim.keymap.set('n', '[n', function()
+  require('treesitter-context').go_to_context(vim.v.count1)
+end, { silent = true })
