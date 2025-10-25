@@ -4,7 +4,8 @@
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
+vim.opt.undofile = true                      -- Enable persistent undo
+vim.opt.undodir = vim.fn.expand("~/.undodir") -- Set custom undo directory
 -- Set tabs to 4 spaces
 vim.opt.expandtab = true -- Use spaces instead of tabs
 vim.opt.tabstop = 4 -- Number of visual spaces per TAB
@@ -411,6 +412,26 @@ require('lazy').setup({
     end,
   },
   {
+  "camgraff/telescope-tmux.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim" },
+    config = function()
+      require('telescope').setup {
+        extensions = {
+            tmux = {
+                -- Optional config
+                all_sessions = true,  -- show all sessions (not just current one)
+                sort_mru = true,      -- sort by most recently used
+                sort_last_used = true,
+                entry_format = "session: #{session_name}, window: #{window_name}, pane: #{pane_current_command}",
+                filter_function = nil, -- custom filter if needed
+            },
+          },
+        }
+        -- Load the extension
+        require('telescope').load_extension('tmux')
+    end,
+  },
+  {
     'nvim-telescope/telescope-dap.nvim',
     dependencies = { 'nvim-telescope/telescope.nvim' },
     config = function()
@@ -650,9 +671,10 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         clangd = {},
+        nil_ls = {settings = {['nil']  = {ft = {'nix'}, formatting = { command = {"nixfmt"}}}}},
         -- gopls = {},
         pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -661,6 +683,15 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+        jdtls = {
+            cmd = {'jdtls'},
+            root_dir = require('lspconfig').util.root_pattern('.git', 'pom.xml'),
+            settings = {
+              java = {
+                home = os.getenv("JAVA_HOME"),
+              },
+            },
+        },
         ts_ls = {
           filetypes = {
             'javascript',
@@ -686,20 +717,47 @@ require('lazy').setup({
             format = false,
           },
         },
-        lua_ls = {
-          -- cmd = { ... },
-          -- filetypes = { ... },
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
+        -- lua_ls = {
+        --   -- cmd = { ... },
+        --   filetypes = { 'lua' },
+        --   -- capabilities = {},
+        --   settings = {
+        --     Lua = {
+        --       completion = {
+        --         callSnippet = 'Replace',
+        --       },
+        --       workspace = {
+        --         -- 📁 CRITICAL: Adds your entire Neovim config to the workspace library.
+        --         -- This allows Lua-LS to index your config and all required modules.
+        --         library = {
+        --             [vim.fn.stdpath("config")] = true,
+        --             -- Include VIMRUNTIME/lua for built-in Neovim API completions
+        --             [vim.fn.expand("$VIMRUNTIME/lua")] = true,
+        --         },
+        --         -- Set to false to avoid checking external libraries, speeding up startup
+        --         checkThirdParty = false,
+        --     },
+        --
+        --     runtime = {
+        --     -- Tell the language server which version of Lua you're using (most
+        --   -- likely LuaJIT in the case of Neovim)
+        --   version = 'LuaJIT',
+        --   -- Tell the language server how to find Lua modules same way as Neovim
+        --   -- (see `:h lua-module-load`)
+        --   path = {
+        --     'lua/?.lua',
+        --     'lua/?/init.lua',
+        --   },
+        --     },
+        --
+        --     telemetry = {
+        --         enable = false,
+        --     },
+        --       -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+        --       -- diagnostics = { disable = { 'missing-fields' } },
+        --     },
+        --   },
+        -- },
       }
 
       -- Ensure the servers and tools above are installed
@@ -719,7 +777,7 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
       })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      require('mason-tool-installer').setup { ensure_installed = ensure_idstalled }
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
@@ -733,6 +791,50 @@ require('lazy').setup({
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
+         ['lua_ls'] = function()
+            require('lspconfig').lua_ls.setup({
+                -- ... your desired settings (diagnostics, workspace, etc.)
+                -- cmd = { ... },
+           filetypes = { 'lua' },
+           -- capabilities = {},
+           settings = {
+             Lua = {
+               completion = {
+                 callSnippet = 'Replace',
+               },
+               workspace = {
+                 -- 📁 CRITICAL: Adds your entire Neovim config to the workspace library.
+                 -- This allows Lua-LS to index your config and all required modules.
+                 library = {
+                     [vim.fn.stdpath("config")] = true,
+                     -- Include VIMRUNTIME/lua for built-in Neovim API completions
+                     [vim.fn.expand("$VIMRUNTIME/lua")] = true,
+                 },
+                 -- Set to false to avoid checking external libraries, speeding up startup
+                 checkThirdParty = false,
+             },
+        
+             runtime = {
+             -- Tell the language server which version of Lua you're using (most
+           -- likely LuaJIT in the case of Neovim)
+           version = 'LuaJIT',
+           -- Tell the language server how to find Lua modules same way as Neovim
+           -- (see `:h lua-module-load`)
+           path = {
+             'lua/?.lua',
+             'lua/?/init.lua',
+           },
+             },
+        
+             telemetry = {
+                 enable = false,
+             },
+               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+               -- diagnostics = { disable = { 'missing-fields' } },
+             },
+           },
+            })
+        end,
         },
       }
     end,
@@ -781,6 +883,7 @@ require('lazy').setup({
         json = { 'prettier' },
         css = { 'prettier' },
         html = { 'prettier' },
+        nix = {"nixfmt"}
       },
     },
   },
@@ -1135,8 +1238,21 @@ require('lazy').setup({
   {
     'nvim-treesitter/nvim-treesitter-context',
   },
-
-  -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
+    {
+        'christoomey/vim-tmux-navigator',
+        lazy = false,
+    },
+	-- time-machine.lua
+    {
+     "y3owk1n/time-machine.nvim",
+     version = "*", -- remove this if you want to use the `main` branch
+     opts = {
+      -- your configuration comes here
+      -- or leave it empty to use the default settings
+      -- refer to the configuration section below
+     }
+    },
+    -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
 
@@ -1191,6 +1307,34 @@ require('lazy').setup({
     },
   },
 })
+
+-- NOTE: better persistent macros
+
+local macros = require('utils.macros')
+
+vim.api.nvim_create_user_command('SaveNamedMacro', function(opts)
+  local args = vim.split(opts.args, "%s+")
+  local name = args[1]
+  local reg = args[2] or 'a'
+  local desc = table.concat(vim.list_slice(args, 3), ' ')
+  macros.save_named(name, reg, desc)
+end, { nargs = '+' })
+
+vim.api.nvim_create_user_command('LoadNamedMacros', function()
+  macros.load_named()
+end, {})
+
+vim.api.nvim_create_user_command('RunMacro', function(opts)
+  macros.run_named(opts.args)
+end, { nargs = 1, complete = function()
+  return vim.tbl_keys(require('utils.macros').list_all_names())
+end })
+
+vim.api.nvim_create_user_command('ListMacros', function()
+  macros.list_named()
+end, {})
+
+vim.keymap.set('n', '<leader>sm', require('utils.macros').telescope_picker, { desc = "[S]earch: Named Macros" })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
@@ -1315,3 +1459,19 @@ vim.keymap.set('n', '<leader>tn', '<cmd>term powershell.exe<CR>', { desc = '[Ter
 vim.keymap.set('n', '[n', function()
   require('treesitter-context').go_to_context(vim.v.count1)
 end, { silent = true })
+
+
+-- NOTE: tmux navigaotr keybindings
+vim.keymap.set('n', '<C-h>', '<cmd>TmuxNavigateLeft<CR>', {desc = 'go to left window'})
+vim.keymap.set('n', '<C-l>', '<cmd>TmuxNavigateRight<CR>', {desc = 'go to right window'})
+vim.keymap.set('n', '<C-j>', '<cmd>TmuxNavigateDown<CR>', {desc = 'go to Down window'})
+vim.keymap.set('n', '<C-k>', '<cmd>TmuxNavigateUp<CR>', {desc = 'go to Up window'})
+
+
+-- NOTE: tmux telescope config
+
+vim.keymap.set('n', '<leader>tw', '<cmd>Telescope tmux windows<CR>', { desc = '[TMUX TELESCOPE] Find tmux window' })
+
+vim.keymap.set('n', '<leader>tp', '<cmd>Telescope tmux panes<CR>', { desc = '[TMUX TELESCOPE] Find tmux pane' })
+
+vim.keymap.set('n', '<leader>ts', '<cmd>Telescope tmux sessions<CR>', { desc = '[TMUX TELESCOPE] Find tmux session' })

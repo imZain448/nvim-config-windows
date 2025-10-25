@@ -46,7 +46,7 @@ return {
         section_separators = { left = '', right = '' },
       },
       sections = {
-        lualine_a = { { 'mode', separator = { left = '' }, right_padding = 2 } },
+        lualine_a = { { 'mode', icon = '',  separator = { left = '' }, right_padding = 2 } },
         lualine_b = { 'filename', 'branch' },
         lualine_c = {
           'diff',
@@ -68,6 +68,17 @@ return {
             }, -- Change color to red for unsaved changes
           },
           -- 'buffers',
+          {
+            function()
+              local reg = vim.fn.reg_recording()
+              if reg == '' then
+                return ''
+              else
+                return '🔴 Rec @' .. reg
+              end
+            end,
+            color = { fg = '#ff5f5f', gui = 'bold' },
+          },
         },
         lualine_x = { 'searchcount', 'lsp_status' },
         lualine_y = { 'filetype', 'progress' },
