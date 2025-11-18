@@ -24,6 +24,7 @@ vim.opt.foldmethod = 'expr'
 -- NOTE: setting up landing panel header
 --
 
+
 vim.g.dashboard_defualt_executive = 'telescope'
 vim.g.dashboard_custom_header = {
   [[░▒▓█▓▒░      ░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░             ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
@@ -965,12 +966,12 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
         opts = {},
       },
@@ -1113,7 +1114,18 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      require('mini.surround').setup({
+        mappings = {
+            add = 'sa',
+            delete = 'sd',
+            find = 'sf',
+            find_lef = 'sF',
+            highlight = 'sh',
+            replace = 'sr',
+            suffix_last = 'l',
+            suffix_next = 'n'
+          }
+      })
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -1255,7 +1267,12 @@ require('lazy').setup({
     -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
-
+  -- NOTE: -- add new plugins here
+    --
+    --
+  {
+        'tpope/vim-surround'
+    },
   -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
   --
   --  Here are some example plugins that I've included in the Kickstart repository.
@@ -1264,6 +1281,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.telescope-undo',
   require 'kickstart.plugins.easymotion',
   require 'kickstart.plugins.autoclose',
   require 'kickstart.plugins.autopairs',
@@ -1475,3 +1493,90 @@ vim.keymap.set('n', '<leader>tw', '<cmd>Telescope tmux windows<CR>', { desc = '[
 vim.keymap.set('n', '<leader>tp', '<cmd>Telescope tmux panes<CR>', { desc = '[TMUX TELESCOPE] Find tmux pane' })
 
 vim.keymap.set('n', '<leader>ts', '<cmd>Telescope tmux sessions<CR>', { desc = '[TMUX TELESCOPE] Find tmux session' })
+
+-- NOTE: noice
+
+vim.keymap.set('n', '<leader>sN', '<cmd>Noice<CR>', { desc = '[ ] show notification' })
+
+-- NOTE: keybing for case conversion
+vim.keymap.set('x', '<leader>cc', function()
+  vim.cmd([[
+    '<,'>s/\v( |_)(\a)/\u\2/g
+    '<,'>s/\v^(\a)/\l\1/
+  ]])
+end, { desc = 'Convert selection to camelCase' })
+
+vim.keymap.set('x', '<leader>cp', function()
+  vim.cmd([[
+    '<,'>s/\v( |_)(\a)/\u\2/g
+    '<,'>s/\v^(\a)/\u\1/
+  ]])
+end, { desc = 'Convert selection to PascalCase' })
+
+-- Convert space/snake_case → camelCase for the selected text
+-- vim.keymap.set('x', '<leader>cc', function()
+--   -- Run both substitutions on the visual selection
+--   vim.cmd([[
+--     '<,'>s/[ _]\(.\)/\U\1/g
+--     '<,'>s/^\(.\)/\L\1/
+--   ]])
+-- end, { desc = 'Convert selection to camelCase' })
+--
+-- vim.keymap.set('x', '<leader>cp', function()
+--   vim.cmd([[
+--     '<,'>s/[ _]\(.\)/\U\1/g
+--     '<,'>s/^\(.\)/\U\1/
+--   ]])
+-- end, { desc = 'Convert selection to PascalCase' })
+--
+vim.keymap.set('x', '<leader>cs', function()
+  vim.cmd([[
+    '<,'>s/\([A-Z]\)/_\L\1/g
+    '<,'>s/^_//
+    '<,'>s/ /_/g
+  ]])
+end, { desc = 'Convert selection to snake_case' })
+
+
+-- NOTE: saving custom snippets
+
+
+vim.keymap.set("v", "<leader>gs", function()
+  local ls = require("luasnip")
+  local text = table.concat(vim.fn.getline("'<", "'>"), "\n")
+  local ft = vim.bo.filetype
+
+  local snippet_trigger = vim.fn.input("Trigger: ")
+  local snippet_name = vim.fn.input("Snippet name: ")
+
+  local snippet = string.format([[
+s("%s", {
+  t(%q)
+}),
+]], snippet_trigger, text)
+
+  -- Try to get LuaSnip’s configured snippet paths
+  local loader = require("luasnip.loaders.from_lua")
+  local base_paths = loader.get_snippet_filetypes and loader.get_snippet_filetypes() or {}
+
+  -- Try to find an existing LuaSnip snippet path, otherwise fallback
+  local default_path = (ls.config and ls.config.snippet_path)
+    or (os.getenv("HOME") .. "/.config/nvim/LuaSnip")
+
+  -- if you used require("luasnip.loaders.from_lua").lazy_load({ paths = "..." })
+  -- you can read that here instead:
+  local ok, configured_paths = pcall(function() return loader._load_paths end)
+  local base_path = (ok and configured_paths and configured_paths[1]) or default_path
+
+  -- ensure directory exists
+  vim.fn.mkdir(base_path, "p")
+
+  local path = string.format("%s/%s.lua", base_path, ft)
+  vim.fn.writefile({ snippet }, path, "a")
+  print("✅ Snippet added to: " .. path)
+
+  -- optional: reload snippets immediately
+  pcall(function() loader.load({ paths = base_path }) end)
+end, { desc = "Save visual selection as snippet" })
+
+
