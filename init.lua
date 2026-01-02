@@ -1308,6 +1308,27 @@ require('lazy').setup({
     --
     --
     {
+        "windwp/nvim-ts-autotag",
+        config = function()
+            require('nvim-ts-autotag').setup({
+                -- Defaults
+                opts = {
+                    enable_close = true,           -- Auto close tags
+                    enable_rename = true,          -- Auto rename pairs of tags
+                    enable_close_on_slash = false, -- Auto close on trailing </
+                },
+                per_filetype = {
+                    ["html"] = {
+                        enable_close = false
+                    }
+                }
+            })
+        end,
+        -- Also override individual filetype configs, these take priority.
+        -- Empty by default, useful if one of the "opts" global settings
+        -- doesn't work well in a specific filetype
+    },
+    {
         'nvim-tree/nvim-web-devicons',
         lazy = false,
         config = function()
@@ -1635,3 +1656,25 @@ s("%s", {
     -- optional: reload snippets immediately
     pcall(function() loader.load({ paths = base_path }) end)
 end, { desc = "Save visual selection as snippet" })
+
+
+
+-- NOTE: copy path and directories
+-- Helper function to copy path and notify
+local function copy_path(expansion)
+    local path = vim.fn.expand(expansion)
+    vim.fn.setreg('+', path)
+    vim.notify('Copied: ' .. path, vim.log.levels.INFO, { title = 'Clipboard' })
+end
+
+-- 1. Relative Path (e.g., src/main.lua)
+vim.keymap.set('n', '<leader>cr', function() copy_path('%') end, { desc = 'Copy relative path' })
+
+-- 2. Absolute Path (e.g., /home/user/project/src/main.lua)
+vim.keymap.set('n', '<leader>ca', function() copy_path('%:p') end, { desc = 'Copy absolute path' })
+
+-- 3. Filename Only (e.g., main.lua)
+vim.keymap.set('n', '<leader>cf', function() copy_path('%:t') end, { desc = 'Copy filename' })
+
+-- 4. Directory Path (e.g., /home/user/project/src)
+vim.keymap.set('n', '<leader>cd', function() copy_path('%:p:h') end, { desc = 'Copy directory path' })
