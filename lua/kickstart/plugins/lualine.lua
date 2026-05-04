@@ -47,7 +47,7 @@ return {
             },
             sections = {
                 lualine_a = { { 'mode', icon = '', separator = { left = '' }, right_padding = 2 } },
-                lualine_b = { { 'filename', path = 1 }, 'branch' },
+                lualine_b = { { 'filename', path = 4 }, 'branch' },
                 lualine_c = {
                     'diff',
                     'diagnostics' --[[ add your center components here in place of this comment ]],

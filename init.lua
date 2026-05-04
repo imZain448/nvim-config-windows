@@ -26,15 +26,15 @@ vim.opt.foldmethod = 'expr'
 
 
 vim.g.dashboard_defualt_executive = 'telescope'
-vim.g.dashboard_custom_header = {
-    [[░▒▓█▓▒░      ░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░             ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
-    [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░                   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
-    [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░                   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░]],
-    [[░▒▓█▓▒░      ░▒▓██████▓▒░    ░▒▓█▓▒░   ░▒▓██████▓▒░             ░▒▓█▓▒▒▓███▓▒░▒▓█▓▒░░▒▓█▓▒░]],
-    [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░         ░▒▓█▓▒░            ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
-    [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░         ░▒▓█▓▒░            ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
-    [[░▒▓████████▓▒░▒▓████████▓▒░  ░▒▓█▓▒░  ░▒▓███████▓▒░              ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
-}
+-- vim.g.dashboard_custom_header = {
+--     [[░▒▓█▓▒░      ░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░             ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
+--     [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░                   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+--     [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░                   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░]],
+--     [[░▒▓█▓▒░      ░▒▓██████▓▒░    ░▒▓█▓▒░   ░▒▓██████▓▒░             ░▒▓█▓▒▒▓███▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+--     [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░         ░▒▓█▓▒░            ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+--     [[░▒▓█▓▒░      ░▒▓█▓▒░         ░▒▓█▓▒░         ░▒▓█▓▒░            ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░]],
+--     [[░▒▓████████▓▒░▒▓████████▓▒░  ░▒▓█▓▒░  ░▒▓███████▓▒░              ░▒▓██████▓▒░ ░▒▓██████▓▒░ ]],
+-- }
 
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
@@ -1182,18 +1182,29 @@ require('lazy').setup({
             --  Check out: https://github.com/echasnovski/mini.nvim
         end,
     },
-    { -- Highlight, edit, and navigate code
+    {
         'nvim-treesitter/nvim-treesitter',
+        branch = 'main',
         build = ':TSUpdate',
+
         dependencies = {
-            'nvim-treesitter/nvim-treesitter-textobjects',
+            {
+                'nvim-treesitter/nvim-treesitter-textobjects',
+                branch = 'main',
+            },
         },
-        main = 'nvim-treesitter.configs', -- Sets main module to use for opts
-        -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-        opts = {
-            ensure_installed = {
+
+        config = function()
+            require('nvim-treesitter.install').compilers = {
+                vim.fn.getenv('CC'),
+                'clang',
+                'gcc',
+                'cl',
+            }
+
+            local parsers = {
                 'bash',
-                'powershell',
+                --'powershell',
                 'c',
                 'diff',
                 'html',
@@ -1206,86 +1217,79 @@ require('lazy').setup({
                 'python',
                 'javascript',
                 'typescript',
-            },
-            -- Autoinstall languages that are not installed
-            auto_install = true,
-            folding = {
-                enable = true,
-            },
-            playground = {
-                enable = true,
-                -- Optional: Configure how the playground is opened
-                updatetime = 25,   -- Debounced time for updating the playground
-                persist_do = true, -- Retain fold/scroll position
-            },
-            highlight = {
-                enable = true,
-                -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-                --  If you are experiencing weird indenting issues, add the language to
-                --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-                additional_vim_regex_highlighting = { 'ruby' },
-            },
-            indent = { enable = true, disable = { 'ruby' } },
-        },
-        -- There are additional nvim-treesitter modules that you can use to interact
-        -- with nvim-treesitter. You should go explore a few and see what interests you:
-        --
-        --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-        --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-        --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
-        config = function(_, opts)
-            -- INFO: comment out this line if you are running on linux as this forces to
-            -- use MSVC over gcc.
-            require('nvim-treesitter.install').compilers = { vim.fn.getenv 'CC', 'cl', 'clang', 'gcc' }
+                'lua',
+            }
 
-            -- adding custom jumping and selection keymaps to jump between functions and conditional
-            opts = vim.tbl_deep_extend('force', opts, {
-                textobjects = {
-                    -- 1. MOVE (Jump between starts)
-                    move = {
-                        enable = true,
-                        set_jumps = true,
+            require('nvim-treesitter').install(parsers)
 
-                        goto_next_start = {
-                            [']f'] = { query = '@function.outer', desc = 'Next Function/Method Start' },
-                            [']I'] = { query = '@conditional.outer', desc = 'Next Conditional Block' },
-                        },
+            vim.api.nvim_create_autocmd('FileType', {
+                callback = function(args)
+                    pcall(vim.treesitter.start, args.buf)
 
-                        goto_previous_start = {
-                            ['[f'] = { query = '@function.outer', desc = 'Previous Function/Method Start' },
-                            ['[I'] = { query = '@conditional.outer', desc = 'Previous Conditional Block' },
-                        },
-                        goto_next = {
-                            [']i'] = { query = '@loop.goto,@statement.goto', desc = 'Next Loop/Conditional Part' },
-                        },
-                        goto_previous = {
-                            ['[i'] = { query = '@loop.goto,@statement.goto', desc = 'Previous Loop/Conditional Part' },
-                        },
-                    },
+                    vim.bo[args.buf].indentexpr =
+                    "v:lua.require'nvim-treesitter'.indentexpr()"
+                end,
+            })
 
-                    -- 2. SELECT (Text Objects for Inner/Outer)
-                    select = {
-                        enable = true,
-                        lookahead = true,
-                        keymaps = {
-                            -- Conditional Selection
-                            ['ic'] = { query = '@conditional.inner', desc = 'Inner Conditional Body' },
-                            ['ac'] = { query = '@conditional.outer', desc = 'Around Conditional Block' },
-
-                            -- Example: Function Selection (If you don't already have one)
-                            ['if'] = { query = '@function.inner', desc = 'Inner Function Body' },
-                            ['af'] = { query = '@function.outer', desc = 'Around Function' },
-                        },
-                        include_surrounding_whitespace = true,
+            require('nvim-treesitter-textobjects').setup({
+                select = {
+                    lookahead = true,
+                    selection_modes = {
+                        ['@function.outer'] = 'V',
+                        ['@function.inner'] = 'V',
+                        ['@conditional.outer'] = 'V',
+                        ['@conditional.inner'] = 'V',
                     },
                 },
             })
-            require('nvim-treesitter.configs').setup(opts)
+
+            local select = require('nvim-treesitter-textobjects.select')
+            local move = require('nvim-treesitter-textobjects.move')
+
+            vim.keymap.set({ 'x', 'o' }, 'if', function()
+                select.select_textobject('@function.inner', 'textobjects')
+            end, { desc = 'Inner Function Body' })
+
+            vim.keymap.set({ 'x', 'o' }, 'af', function()
+                select.select_textobject('@function.outer', 'textobjects')
+            end, { desc = 'Around Function' })
+
+            vim.keymap.set({ 'x', 'o' }, 'ic', function()
+                select.select_textobject('@conditional.inner', 'textobjects')
+            end, { desc = 'Inner Conditional Body' })
+
+            vim.keymap.set({ 'x', 'o' }, 'ac', function()
+                select.select_textobject('@conditional.outer', 'textobjects')
+            end, { desc = 'Around Conditional Block' })
+
+            vim.keymap.set({ 'n', 'x', 'o' }, ']f', function()
+                move.goto_next_start('@function.outer', 'textobjects')
+            end, { desc = 'Next Function/Method Start' })
+
+            vim.keymap.set({ 'n', 'x', 'o' }, '[f', function()
+                move.goto_previous_start('@function.outer', 'textobjects')
+            end, { desc = 'Previous Function/Method Start' })
+
+            vim.keymap.set({ 'n', 'x', 'o' }, ']I', function()
+                move.goto_next_start('@conditional.outer', 'textobjects')
+            end, { desc = 'Next Conditional Block' })
+
+            vim.keymap.set({ 'n', 'x', 'o' }, '[I', function()
+                move.goto_previous_start('@conditional.outer', 'textobjects')
+            end, { desc = 'Previous Conditional Block' })
+
+            vim.keymap.set({ 'n', 'x', 'o' }, ']i', function()
+                move.goto_next('@loop.outer', 'textobjects')
+            end, { desc = 'Next Loop Part' })
+
+            vim.keymap.set({ 'n', 'x', 'o' }, '[i', function()
+                move.goto_previous('@loop.outer', 'textobjects')
+            end, { desc = 'Previous Loop Part' })
         end,
     },
-    {
-        'nvim-treesitter/nvim-treesitter-context',
-    },
+    -- {
+    --  'nvim-treesitter/nvim-treesitter-context',
+    -- },
     {
         'christoomey/vim-tmux-navigator',
         lazy = false,
@@ -1303,7 +1307,6 @@ require('lazy').setup({
     -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
     -- init.lua. If you want these files, they are in the repository, so you can just download them and
     -- place them in the correct locations.
-    -- NOTE: -- add new plugins here
     --
     --
     --
@@ -1339,7 +1342,29 @@ require('lazy').setup({
     {
         'tpope/vim-surround'
     },
-    -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
+    {
+        "folke/flash.nvim",
+        event = "VeryLazy",
+        ---@type Flash.Config
+        opts = {
+            modes = {
+                search = {
+                    enabed = true
+                },
+                char = {
+                    jump_labels = true
+                }
+            }
+        },
+        keys = {
+            { "<leader><leader>s", mode = { "n", "x", "o" }, function() require("flash").jump() end,              desc = "Flash" },
+            { "<leader><leader>S", mode = { "n", "x", "o" }, function() require("flash").treesitter() end,        desc = "Flash Treesitter" },
+            { "r",                 mode = "o",               function() require("flash").remote() end,            desc = "Remote Flash" },
+            { "R",                 mode = { "o", "x" },      function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+            { "<c-s>",             mode = { "c" },           function() require("flash").toggle() end,            desc = "Toggle Flash Search" },
+        },
+    },
+    -- NOTE: -- add new plugins above ☝️
     --
     --  Here are some example plugins that I've included in the Kickstart repository.
     --  Uncomment any of the lines below to enable them (you will need to restart nvim).
@@ -1349,12 +1374,12 @@ require('lazy').setup({
     -- require 'kickstart.plugins.lint',
     require 'kickstart.plugins.xcodebuild',
     require 'kickstart.plugins.telescope-undo',
-    require 'kickstart.plugins.easymotion',
+    -- require 'kickstart.plugins.easymotion',
     require 'kickstart.plugins.autoclose',
     require 'kickstart.plugins.autopairs',
     require 'kickstart.plugins.neo-tree',
     require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
-    require 'kickstart.plugins.avante',
+    -- require 'kickstart.plugins.avante',
     require 'kickstart.plugins.dashboard',
     require 'kickstart.plugins.obsidian',
     require 'kickstart.plugins.harpoon',
@@ -1453,6 +1478,15 @@ end, { desc = '[Harpoon] select file 5' })
 vim.keymap.set('n', '<leader>h6', function()
     harpoon:list():select(6)
 end, { desc = '[Harpoon] select file 6' })
+vim.keymap.set('n', '<leader>h7', function()
+    harpoon:list():select(7)
+end, { desc = '[Harpoon] select file 7' })
+vim.keymap.set('n', '<leader>h8', function()
+    harpoon:list():select(8)
+end, { desc = '[Harpoon] select file 8' })
+vim.keymap.set('n', '<leader>h9', function()
+    harpoon:list():select(9)
+end, { desc = '[Harpoon] select file 9' })
 
 vim.keymap.set('n', '<leader>hk', function()
     local buf_name = vim.api.nvim_buf_get_name(0)
@@ -1495,28 +1529,34 @@ end, { desc = '[Harpoon] drop file at index 4' })
 vim.keymap.set('n', '<leader>H5', function()
     harpoon:list():remove_at(5)
 end, { desc = '[Harpoon] drop file at index 5' })
+--
+--: Aavnate keybindings AI assistant
+--
+-- vim.keymap.set('n', '<leader>Ac', function()
+--     local avante_types = { 'Avante', 'AvanteInput', 'AvanteSelectedFiles', 'AvanteSelectedCode' }
+--     local to_close = {}
+--
+--     for _, win in ipairs(vim.api.nvim_list_wins()) do
+--         local buf = vim.api.nvim_win_get_buf(win)
+--         local ft = vim.api.nvim_get_option_value('filetype', { buf = buf })
+--         if vim.tbl_contains(avante_types, ft) then
+--             table.insert(to_close, win)
+--         end
+--     end
+--
+--     for _, win in ipairs(to_close) do
+--         pcall(vim.api.nvim_win_close, win, true)
+--     end
+-- end, { desc = 'Avante: Close Avante Sidebar & Chat' })
 
--- NOTE: Aavnate keybindings AI assistant
-vim.keymap.set('n', '<leader>Ac', function()
-    local avante_types = { 'Avante', 'AvanteInput', 'AvanteSelectedFiles', 'AvanteSelectedCode' }
-    local to_close = {}
-
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-        local buf = vim.api.nvim_win_get_buf(win)
-        local ft = vim.api.nvim_get_option_value('filetype', { buf = buf })
-        if vim.tbl_contains(avante_types, ft) then
-            table.insert(to_close, win)
-        end
-    end
-
-    for _, win in ipairs(to_close) do
-        pcall(vim.api.nvim_win_close, win, true)
-    end
-end, { desc = 'Avante: Close Avante Sidebar & Chat' })
-
-vim.keymap.set('n', '<leader>Ao', '<cmd>AvanteChat<CR>', { desc = 'Avante: Open Avante Chat' })
-vim.keymap.set('n', '<leader>An', '<cmd>AvanteChatNew<CR>', { desc = 'Avante: Open Avante New Chat' })
-
+-- vim.keymap.set('n', '<leader>Ao', '<cmd>AvanteChat<CR>', { desc = 'Avante: Open Avante Chat' })
+-- vim.keymap.set('n', '<leader>An', '<cmd>AvanteChatNew<CR>', { desc = 'Avante: Open Avante New Chat' })
+-- NOTE: page jump keybindings
+vim.keymap.set('n', '<C-u>', '<C-u>zz')
+vim.keymap.set('n', '<C-d>', '<C-d>zz')
+vim.keymap.set('n', '<C-f>', '<C-f>zz')
+vim.keymap.set('n', '<C-b>', '<C-b>zz')
+--
 -- NOTE: keybindings for todo comments
 vim.keymap.set(
     'n',
