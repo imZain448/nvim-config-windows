@@ -13,7 +13,31 @@ return {
   -- keys = {
   --   { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   -- },
+  config = function(_, opts)
+    -- Tokyonight-night tab highlights
+    vim.api.nvim_set_hl(0, 'NeoTreeTabActive', { bg = '#3d59a1', fg = '#c0caf5', bold = true })
+    vim.api.nvim_set_hl(0, 'NeoTreeTabInactive', { bg = '#16161e', fg = '#565f89' })
+    vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorActive', { fg = '#3d59a1', bg = '#16161e' })
+    vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorInactive', { fg = '#16161e', bg = '#16161e' })
+
+    require('neo-tree').setup(opts)
+  end,
   opts = {
+    source_selector = {
+      winbar = true,
+      separator = { left = '  ', right = '' }, -- powerline solid arrows
+      show_separator_on_edge = true,
+      highlight_tab = 'NeoTreeTabInactive',
+      highlight_tab_active = 'NeoTreeTabActive',
+      highlight_background = 'NeoTreeTabInactive',
+      highlight_separator = 'NeoTreeTabSeparatorInactive',
+      highlight_separator_active = 'NeoTreeTabSeparatorActive',
+      sources = {
+        { source = 'filesystem', display_name = '󰉓 Files' },
+        { source = 'buffers', display_name = '󰈚 Buffers' },
+        { source = 'git_status', display_name = ' Git' },
+      },
+    },
     close_if_last_window = false, -- Close Neo-tree if it is the last window left in the tab
     popup_border_style = 'NC', -- or "" to use 'winborder' on Neovim v0.11+
     enable_git_status = true,
