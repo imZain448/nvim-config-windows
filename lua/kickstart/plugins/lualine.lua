@@ -1,101 +1,133 @@
 return {
-    'nvim-lualine/lualine.nvim',
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
-    config = function()
-        -- Bubbles config for lualine
-        -- Author: lokesh-krishna
-        -- MIT license, see LICENSE for more details.
+  'nvim-lualine/lualine.nvim',
+  dependencies = { 'nvim-tree/nvim-web-devicons' },
+  config = function()
+    local c = {
+      bg = '#16181a',
+      bg_b = '#1e2030',
+      fg = '#ffffff',
+      dim = '#5a6374',
+      blue = '#5ea1ff',
+      green = '#5eff6c',
+      cyan = '#5ef1ff',
+      red = '#ff6e5e',
+      yellow = '#f1ff5e',
+      pink = '#ff5ef1',
+      orange = '#ff9f5e',
+      purple = '#bd5eff',
+    }
 
+    local theme = {
+      -- sections b/c are transparent — only the a/z pills carry color
+      normal   = { a = { fg = c.bg, bg = c.blue,   gui = 'bold' }, b = { fg = c.fg,  bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+      insert   = { a = { fg = c.bg, bg = c.green,  gui = 'bold' }, b = { fg = c.fg,  bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+      visual   = { a = { fg = c.bg, bg = c.purple, gui = 'bold' }, b = { fg = c.fg,  bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+      replace  = { a = { fg = c.bg, bg = c.red,    gui = 'bold' }, b = { fg = c.fg,  bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+      command  = { a = { fg = c.bg, bg = c.yellow, gui = 'bold' }, b = { fg = c.fg,  bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+      terminal = { a = { fg = c.bg, bg = c.cyan,   gui = 'bold' }, b = { fg = c.fg,  bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+      inactive = { a = { fg = c.dim, bg = 'NONE' }, b = { fg = c.dim, bg = 'NONE' }, c = { fg = c.dim, bg = 'NONE' } },
+    }
 
-        -- stylua: ignore
-        local colors = {
-            blue   = '#80a0ff',
-            cyan   = '#79dac8',
-            black  = '#080808',
-            white  = '#c6c6c6',
-            red    = '#ff5189',
-            violet = '#d183e8',
-            grey   = '#303030',
-            green  = '#42f551',
-        }
+    -- reads the active neo-tree source for the given window
+    local function current_source()
+      local ok, manager = pcall(require, 'neo-tree.sources.manager')
+      if not ok then
+        return 'filesystem'
+      end
+      local state = manager.get_state_for_window(vim.api.nvim_get_current_win())
+      return state and state.name or 'filesystem'
+    end
 
-        local bubbles_theme = {
-            normal = {
-                a = { fg = colors.black, bg = colors.violet },
-                b = { fg = colors.white, bg = colors.grey },
-                c = { fg = colors.white },
-            },
+    local function tab(source_name, label)
+      return {
+        function()
+          return label
+        end,
+        color = function()
+          if current_source() == source_name then
+            return { fg = '#16181a', bg = '#5ea1ff', gui = 'bold' }
+          else
+            return { fg = '#5a6374', bg = '#1e2030' }
+          end
+        end,
+        separator = { left = '', right = '' },
+        padding = { left = 1, right = 1 },
+      }
+    end
 
-            insert = { a = { fg = colors.black, bg = colors.blue } },
-            visual = { a = { fg = colors.black, bg = colors.cyan } },
-            replace = { a = { fg = colors.black, bg = colors.red } },
-            command = { a = { fg = colors.black, bg = colors.red } },
-            terminal = { a = { fg = colors.black, bg = colors.red } },
+    -- custom extension: replaces lualine in the neo-tree window with source tabs
+    local neo_tree_ext = {
+      sections = {
+        lualine_a = {
+          tab('filesystem', '󰉓 Files'),
+          tab('buffers', '󰈚 Buffers'),
+          tab('git_status', ' Git'),
+        },
+      },
+      inactive_sections = {
+        lualine_a = {
+          tab('filesystem', '󰉓 Files'),
+          tab('buffers', '󰈚 Buffers'),
+          tab('git_status', ' Git'),
+        },
+      },
+      filetypes = { 'neo-tree' },
+    }
 
-            inactive = {
-                a = { fg = colors.white, bg = colors.black },
-                b = { fg = colors.white, bg = colors.black },
-                c = { fg = colors.white },
-            },
-        }
-
-        require('lualine').setup {
-            options = {
-                theme = bubbles_theme,
-                component_separators = '',
-                section_separators = { left = '', right = '' },
-            },
-            sections = {
-                lualine_a = { { 'mode', icon = '', separator = { left = '' }, right_padding = 2 } },
-                lualine_b = { { 'filename', path = 4 }, 'branch' },
-                lualine_c = {
-                    'diff',
-                    'diagnostics' --[[ add your center components here in place of this comment ]],
-                    {
-                        function()
-                            return vim.bo.modified and '●' or ''
-                        end,
-                        color = {
-                            gui = 'bold',
-                            fg = colors.red,
-                            -- fg = function()
-                            --   if vim.bo.modified then
-                            --     return colors.red
-                            --   else
-                            --     return colors.green
-                            --   end
-                            -- end,
-                        }, -- Change color to red for unsaved changes
-                    },
-                    -- 'buffers',
-                    {
-                        function()
-                            local reg = vim.fn.reg_recording()
-                            if reg == '' then
-                                return ''
-                            else
-                                return '🔴 Rec @' .. reg
-                            end
-                        end,
-                        color = { fg = '#ff5f5f', gui = 'bold' },
-                    },
-                },
-                lualine_x = { 'searchcount', 'lsp_status' },
-                lualine_y = { 'filetype', 'progress' },
-                lualine_z = {
-                    { 'location', separator = { right = '' }, left_padding = 2 },
-                },
-            },
-            inactive_sections = {
-                lualine_a = { 'filename' },
-                lualine_b = {},
-                lualine_c = {},
-                lualine_x = {},
-                lualine_y = {},
-                lualine_z = { 'location' },
-            },
-            tabline = {},
-            extensions = {},
-        }
-    end,
+    require('lualine').setup {
+      options = {
+        theme = theme,
+        section_separators = { left = '', right = '' },
+        component_separators = { left = '', right = '' },
+        globalstatus = false, -- needed so neo-tree gets its own statusline
+      },
+      sections = {
+        lualine_a = {
+          { 'mode', separator = { left = '' }, right_padding = 2 },
+        },
+        lualine_b = {
+          { 'filename', path = 4, color = { fg = c.fg } },
+          { 'branch', color = { fg = c.pink, gui = 'bold' } },
+        },
+        lualine_c = {
+          { 'diff', diff_color = { added = { fg = c.green }, modified = { fg = c.yellow }, removed = { fg = c.red } } },
+          { 'diagnostics', diagnostics_color = { error = { fg = c.red }, warn = { fg = c.yellow }, info = { fg = c.cyan }, hint = { fg = c.blue } } },
+          {
+            function()
+              return vim.bo.modified and '●' or ''
+            end,
+            color = { fg = c.red, gui = 'bold' },
+          },
+          {
+            function()
+              local reg = vim.fn.reg_recording()
+              return reg ~= '' and ('󰑊 Rec @' .. reg) or ''
+            end,
+            color = { fg = c.orange, gui = 'bold' },
+          },
+        },
+        lualine_x = {
+          { 'searchcount', color = { fg = c.cyan } },
+          { 'lsp_status', color = { fg = c.blue } },
+        },
+        lualine_y = {
+          { 'filetype', color = { fg = c.purple } },
+          { 'progress', color = { fg = c.dim } },
+        },
+        lualine_z = {
+          { 'location', separator = { right = '' }, left_padding = 2 },
+        },
+      },
+      inactive_sections = {
+        lualine_a = {},
+        lualine_b = {},
+        lualine_c = { { 'filename', color = { fg = c.dim } } },
+        lualine_x = { { 'location', color = { fg = c.dim } } },
+        lualine_y = {},
+        lualine_z = {},
+      },
+      tabline = {},
+      extensions = { neo_tree_ext, 'lazy', 'quickfix' },
+    }
+  end,
 }

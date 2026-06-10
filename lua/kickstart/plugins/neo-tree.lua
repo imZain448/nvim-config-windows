@@ -14,29 +14,18 @@ return {
   --   { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   -- },
   config = function(_, opts)
-    -- Tokyonight-night tab highlights
-    vim.api.nvim_set_hl(0, 'NeoTreeTabActive', { bg = '#3d59a1', fg = '#c0caf5', bold = true })
-    vim.api.nvim_set_hl(0, 'NeoTreeTabInactive', { bg = '#16161e', fg = '#565f89' })
-    vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorActive', { fg = '#3d59a1', bg = '#16161e' })
-    vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorInactive', { fg = '#16161e', bg = '#16161e' })
+    -- Cyberdream tab highlights
+    vim.api.nvim_set_hl(0, 'NeoTreeTabActive',            { bg = '#5ea1ff', fg = '#16181a', bold = true })
+    vim.api.nvim_set_hl(0, 'NeoTreeTabInactive',          { bg = '#16181a', fg = '#5a6374' })
+    vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorActive',   { fg = '#5ea1ff', bg = '#16181a' })
+    vim.api.nvim_set_hl(0, 'NeoTreeTabSeparatorInactive', { fg = '#16181a', bg = '#16181a' })
 
     require('neo-tree').setup(opts)
   end,
   opts = {
     source_selector = {
-      winbar = true,
-      separator = { left = '  ', right = '' }, -- powerline solid arrows
-      show_separator_on_edge = true,
-      highlight_tab = 'NeoTreeTabInactive',
-      highlight_tab_active = 'NeoTreeTabActive',
-      highlight_background = 'NeoTreeTabInactive',
-      highlight_separator = 'NeoTreeTabSeparatorInactive',
-      highlight_separator_active = 'NeoTreeTabSeparatorActive',
-      sources = {
-        { source = 'filesystem', display_name = '󰉓 Files' },
-        { source = 'buffers', display_name = '󰈚 Buffers' },
-        { source = 'git_status', display_name = ' Git' },
-      },
+      winbar     = false,
+      statusline = false, -- lualine extension renders tabs at bottom
     },
     close_if_last_window = false, -- Close Neo-tree if it is the last window left in the tab
     popup_border_style = 'NC', -- or "" to use 'winborder' on Neovim v0.11+
