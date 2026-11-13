@@ -1,22 +1,29 @@
 return {
-    "wojciech-kulik/xcodebuild.nvim",
-    dependencies = {
-        -- Uncomment a picker that you want to use, snacks.nvim might be additionally
-        -- useful to show previews and failing snapshots.
+  'wojciech-kulik/xcodebuild.nvim',
+  dependencies = {
+    'MunifTanjim/nui.nvim',
+    'nvim-treesitter/nvim-treesitter',
+    'nvim-telescope/telescope.nvim',
+    'mfussenegger/nvim-dap',           -- required for DAP integration
+  },
+  config = function()
+    require('xcodebuild').setup {
+      integrations = {
+        nvim_dap = {
+          enabled = true,
+          terminate_debugger_on_stop = true,
+        },
+      },
+    }
 
-        -- You must select at least one:
-        -- "nvim-telescope/telescope.nvim",
-        -- "ibhagwan/fzf-lua",
-        -- "folke/snacks.nvim", -- (optional) to show previews
-
-        "MunifTanjim/nui.nvim",
-        "nvim-tree/nvim-tree.lua",     -- (optional) to manage project files
-        "stevearc/oil.nvim",           -- (optional) to manage project files
-        "nvim-treesitter/nvim-treesitter", -- (optional) for Quick tests support (required Swift parser)
-    },
-    config = function()
-        require("xcodebuild").setup({
-            -- put some options here or leave it empty to use default settings
-        })
-    end,
+    -- xcodebuild keymaps
+    local xb = require 'xcodebuild.actions'
+    vim.keymap.set('n', '<leader>xb', xb.build,               { desc = 'Xcode Build' })
+    vim.keymap.set('n', '<leader>xr', xb.run,                 { desc = 'Xcode Run' })
+    vim.keymap.set('n', '<leader>xt', xb.run_tests,           { desc = 'Xcode Run Tests' })
+    vim.keymap.set('n', '<leader>xT', xb.run_selected_tests,  { desc = 'Xcode Run Selected Tests' })
+    vim.keymap.set('n', '<leader>xp', xb.select_project,      { desc = 'Xcode Select Project' })
+    vim.keymap.set('n', '<leader>xs', xb.select_scheme,       { desc = 'Xcode Select Scheme' })
+    vim.keymap.set('n', '<leader>xd', xb.select_device,       { desc = 'Xcode Select Device' })
+  end,
 }

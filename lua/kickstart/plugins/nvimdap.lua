@@ -10,6 +10,41 @@ return {
     local dapui = require 'dapui'
     local telescope = require 'telescope'
 
+    -- ── Swift / iOS DAP (xcodebuild.nvim, Xcode 16+ built-in LLDB) ──────
+    -- xcodebuild.nvim registers its own adapter for Xcode targets;
+    -- setup() only accepts an optional loadBreakpoints boolean (default true)
+    local ok, xcdap = pcall(require, 'xcodebuild.integrations.dap')
+    if ok then
+      xcdap.setup() -- loads breakpoints from xcodebuild on attach
+    end
+
+    -- plain Swift Package Manager projects (no Xcode target) use lldb-dap
+    -- which ships with Xcode 16+ at the path below
+    local lldb_dap = '/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap'
+    if vim.fn.executable(lldb_dap) == 1 then
+      dap.adapters.swift = {
+        type = 'executable',
+        command = lldb_dap,
+      }
+      dap.configurations.swift = {
+        {
+          name       = 'Launch Swift (SPM debug build)',
+          type       = 'swift',
+          request    = 'launch',
+          program    = function()
+            vim.fn.system 'swift build'
+            local cwd  = vim.fn.getcwd()
+            local name = vim.fn.fnamemodify(cwd, ':t')
+            return vim.fn.input('Executable: ', cwd .. '/.build/debug/' .. name, 'file')
+          end,
+          cwd        = '${workspaceFolder}',
+          stopOnEntry = false,
+          args       = {},
+        },
+      }
+    end
+    -- ─────────────────────────────────────────────────────────────────────
+
     -- Custom launch config for FastAPI (uvicorn)
     local function load_project_dap_config()
       -- NOTE: your local launch config should be at this path in the root dir of the project
@@ -56,26 +91,57 @@ return {
     -- DAP UI setup
     dapui.setup()
 
-    -- Auto-open/close dap-ui
+    -- Auto-open/close dap-ui and manage neo-tree
+    local neotree_was_open = false
     dap.listeners.after.event_initialized['dapui_config'] = function()
+      -- remember if neo-tree was open and close it
+      for _, win in pairs(vim.api.nvim_list_wins()) do
+        if vim.bo[vim.api.nvim_win_get_buf(win)].filetype == 'neo-tree' then
+          neotree_was_open = true
+          break
+        end
+      end
+      if neotree_was_open then
+        vim.cmd 'Neotree close'
+      end
       dapui.open()
     end
+    local function on_dap_close()
+      dapui.close()
+      if neotree_was_open then
+        vim.cmd 'Neotree show'
+        neotree_was_open = false
+      end
+    end
+    dap.listeners.before.event_terminated['dapui_config'] = on_dap_close
+    dap.listeners.before.event_exited['dapui_config'] = on_dap_close
     -- dap.listeners.before.event_terminated['dapui_config'] = function()
     --   dapui.close()
     -- end
     -- dap.listeners.before.event_exited['dapui_config'] = function()
     --   dapui.close()
     -- end
-    -- NOTE: Helper: jump to dap-ui window by filetype
+    -- NOTE: Helper: jump to dap-ui window by filetype, opening the UI first if needed
     local function focus_dapui(ft)
-      for _, win in pairs(vim.api.nvim_list_wins()) do
-        local buf = vim.api.nvim_win_get_buf(win)
-        if vim.bo[buf].filetype == ft then
-          vim.api.nvim_set_current_win(win)
-          return
+      local function try_focus()
+        for _, win in pairs(vim.api.nvim_list_wins()) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          if vim.bo[buf].filetype == ft then
+            vim.api.nvim_set_current_win(win)
+            return true
+          end
         end
+        return false
       end
-      vim.notify('No DAP UI window with filetype ' .. ft, vim.log.levels.WARN)
+
+      if not try_focus() then
+        dapui.open()
+        vim.schedule(function()
+          if not try_focus() then
+            vim.notify('No DAP UI window with filetype ' .. ft, vim.log.levels.WARN)
+          end
+        end)
+      end
     end
     --
     -- Keymaps
@@ -128,5 +194,8 @@ return {
     vim.keymap.set('n', '<leader>dr', function()
       focus_dapui 'dap-repl'
     end, { desc = 'DAP: Focus REPL' })
+    vim.keymap.set('n', '<leader>do', function()
+      focus_dapui 'dapui_console'
+    end, { desc = 'DAP: Focus Console' })
   end,
 }

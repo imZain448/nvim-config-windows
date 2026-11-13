@@ -99,6 +99,17 @@ vim.o.inccommand = 'split'
 -- Show which line your cursor is on
 vim.o.cursorline = true
 
+-- Stellarium scripts (.ssc / .inc) are ECMAScript/JavaScript. Register their
+-- extensions as dedicated filetypes so ts_ls (see its `filetypes` list) attaches
+-- and Tree-sitter can map them to the `javascript` parser (see the treesitter
+-- config, `vim.treesitter.language.register`).
+vim.filetype.add {
+  extension = {
+    ssc = 'ssc',
+    inc = 'inc',
+  },
+}
+
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.o.scrolloff = 10
 
@@ -139,8 +150,35 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 -- vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 -- vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+-- Window resize with larger increments; supports count (e.g. 3<C-w>> = 15 cols)
+vim.keymap.set('n', '<C-w><', function()
+  vim.cmd(vim.v.count1 * 5 .. 'wincmd <')
+end, { desc = 'Resize window left' })
+vim.keymap.set('n', '<C-w>>', function()
+  vim.cmd(vim.v.count1 * 5 .. 'wincmd >')
+end, { desc = 'Resize window right' })
+vim.keymap.set('n', '<C-w>-', function()
+  vim.cmd(vim.v.count1 * 5 .. 'wincmd -')
+end, { desc = 'Resize window shorter' })
+vim.keymap.set('n', '<C-w>+', function()
+  vim.cmd(vim.v.count1 * 5 .. 'wincmd +')
+end, { desc = 'Resize window taller' })
+
 -- NOTE: keymap for opening and closing neo tree
-vim.keymap.set('n', '<C-e>', '<Cmd>Neotree toggle<CR>', { desc = 'Toggle Neo Tree' })
+local dapui_filetypes = {
+  dapui_scopes = true,
+  dapui_breakpoints = true,
+  dapui_stacks = true,
+  dapui_watches = true,
+  dapui_console = true,
+  ['dap-repl'] = true,
+}
+vim.keymap.set('n', '<C-e>', function()
+  if dapui_filetypes[vim.bo.filetype] then
+    return
+  end
+  vim.cmd 'Neotree toggle'
+end, { desc = 'Toggle Neo Tree' })
 vim.keymap.set('n', '<leader>e', function()
   if vim.bo.filetype == 'neo-tree' then
     vim.cmd 'wincmd p'
@@ -154,6 +192,18 @@ vim.keymap.set('n', '<C-S-h>', '<C-w>H', { desc = 'Move window to the left' })
 vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
 vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
 vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
+
+-- Zoom/maximize the current window, tmux-style (prefix z).
+-- Opens the current window full-screen in a new tab; press again to restore the
+-- original split layout exactly. Skips zooming when there's only one window.
+vim.keymap.set('n', '<leader>z', function()
+  if vim.t.zoomed then
+    vim.cmd 'tabclose'
+  elseif vim.fn.winnr '$' > 1 then
+    vim.cmd 'tab split'
+    vim.t.zoomed = true
+  end
+end, { desc = '[Z]oom / maximize window (toggle)' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -313,6 +363,7 @@ require('lazy').setup({
     event = 'VimEnter',
     dependencies = {
       'nvim-lua/plenary.nvim',
+      'nvim-telescope/telescope-ui-select.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
         'nvim-telescope/telescope-fzf-native.nvim',
 
@@ -702,7 +753,7 @@ require('lazy').setup({
       -- all the language servers configs
       local servers = {
         clangd = {},
-        nil_ls = { settings = { ['nil'] = { ft = { 'nix' }, formatting = { command = { 'nixfmt' } } } } },
+        -- nil_ls is a Nix LSP not available on Mason; install via Nix if needed
         -- gopls = {},
         ruff = {},
         pyright = pyright_setting,
@@ -726,6 +777,8 @@ require('lazy').setup({
         },
         ts_ls = {
           filetypes = {
+            'ssc',
+            'inc',
             'javascript',
             'javascriptreact',
             'typescript',
@@ -882,6 +935,42 @@ require('lazy').setup({
           end,
         },
       }
+
+      -- sourcekit-lsp for Xcode projects.
+      -- The built-in lspconfig config uses cmd={'sourcekit-lsp'} which resolves to
+      -- /usr/bin/sourcekit-lsp (the CLT stub). That stub has no SDK knowledge and
+      -- causes "Loading the standard library failed" from sourcekitd.
+      -- Fix: override cmd to use xcrun (sets full toolchain env) + explicitly set
+      -- SDKROOT so sourcekitd can locate Swift.swiftmodule and friends.
+      -- --default-workspace-type buildServer ensures it uses our buildServer.json
+      -- immediately without racing against workspace-type auto-detection.
+      -- c/cpp removed from filetypes to prevent indexing SPM's cmark C packages.
+      -- The built-in config's root_dir, get_language_id, and capabilities all
+      -- survive because vim.lsp.config deep-merges; we only override what's listed.
+      local sdk = vim.fn.trim(vim.fn.system 'xcrun --show-sdk-path')
+      vim.lsp.config('sourcekit', {
+        cmd = {
+          'xcrun',
+          'sourcekit-lsp',
+          '--default-workspace-type',
+          'buildServer',
+        },
+        filetypes = { 'swift', 'objc', 'objcpp' },
+        cmd_env = {
+          DEVELOPER_DIR = '/Applications/Xcode.app/Contents/Developer',
+          SDKROOT = sdk,
+        },
+        settings = {
+          sourcekit = {
+            inlayHints = {
+              variableTypeHints = { enabled = true },
+              parameterNameHints = { enabled = 'all' },
+              genericParameterHints = { enabled = true },
+            },
+          },
+        },
+      })
+      vim.lsp.enable 'sourcekit'
     end,
   },
 
@@ -1131,14 +1220,62 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      -- vim.cmd.colorscheme 'tokyonight-night'
 
       vim.cmd [[
           hi! FloatBorder guifg=#7aa2f7 guibg=NONE
         ]]
     end,
   },
-
+  -- {
+  --   'erl-koenig/theme-hub.nvim',
+  --   dependencies = {
+  --     'nvim-lua/plenary.nvim',
+  --     -- Optional: for themes that use lush (will be notified if a theme requires it)
+  --     -- "rktjmp/lush.nvim"
+  --   },
+  --   config = function()
+  --     require('theme-hub').setup {
+  --       -- Configuration options (see below)
+  --     }
+  --   end,
+  -- },
+  {
+    'uhs-robert/oasis.nvim',
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require('oasis').setup {
+        transparent = true,
+      } -- (see Configuration below for all customization options)
+      -- vim.cmd.colorscheme 'oasis-twilight' -- After setup, apply theme (or any style like "oasis-night")
+    end,
+  },
+  -- Using lazy.nvim
+  {
+    'metalelf0/black-metal-theme-neovim',
+    lazy = false,
+    priority = 1000,
+    config = function()
+      require('black-metal').setup {
+        -- optional configuration here, e.g.:
+        trve = true, -- switch this to false if you want light variants
+        theme = 'dark-funeral',
+        alt_bg = true,
+        transparent = true,
+        -- the theme's neo-tree groups use `transparent and nil or c.bg`, which always
+        -- resolves to c.bg, so clear those backgrounds explicitly
+        highlights = {
+          NeoTreeNormal = { bg = 'none' },
+          NeoTreeNormalNC = { bg = 'none' },
+          NeoTreeEndOfBuffer = { bg = 'none' },
+          NeoTreeVertSplit = { bg = 'none' },
+          NeoTreeWinSeparator = { bg = 'none' },
+        },
+      }
+      require('black-metal').load()
+    end,
+  },
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
   -- Noice.nvim
@@ -1245,6 +1382,10 @@ require('lazy').setup({
       }
 
       require('nvim-treesitter').install(parsers)
+
+      -- Stellarium scripts are JavaScript; drive their highlighting/indent with
+      -- the `javascript` parser (registered in vim.filetype.add near the top).
+      vim.treesitter.language.register('javascript', { 'ssc', 'inc' })
 
       vim.api.nvim_create_autocmd('FileType', {
         callback = function(args)
@@ -1435,6 +1576,9 @@ require('lazy').setup({
       vim.keymap.set('n', '[;', dropbar_api.goto_context_start, { desc = 'Go to start of current context' })
       vim.keymap.set('n', '];', dropbar_api.select_next_context, { desc = 'Select next context' })
 
+      -- breadcrumbs in telescope preview windows (grep, lsp references, ...)
+      require('utils.dropbar_telescope').setup()
+
       -- transparent dropbar background
       vim.api.nvim_set_hl(0, 'WinBar', { bg = 'NONE' })
       vim.api.nvim_set_hl(0, 'WinBarNC', { bg = 'NONE' })
@@ -1443,7 +1587,8 @@ require('lazy').setup({
     end,
   },
   -- NOTE: -- add new plugins above ☝️
-  --
+
+  -- custom claude file suggestion plugin
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
@@ -1459,11 +1604,12 @@ require('lazy').setup({
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
   -- require 'kickstart.plugins.avante',
   require 'kickstart.plugins.dashboard',
-  require 'kickstart.plugins.obsidian',
+  -- require 'kickstart.plugins.obsidian',
   require 'kickstart.plugins.harpoon',
   require 'kickstart.plugins.lualine',
   require 'kickstart.plugins.nvimdap',
   require 'kickstart.plugins.csharp',
+  require 'kickstart.plugins.undotree',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -1496,6 +1642,9 @@ require('lazy').setup({
     },
   },
 })
+
+-- claude custom file suggestion
+require('claude_at').setup()
 
 -- NOTE: better persistent macros
 
